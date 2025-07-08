@@ -1,12 +1,12 @@
 from pydantic import BaseModel
 
 class User(BaseModel):
-    id: int
+    id: str  # UUID como string que devuelve Supabase
     name: str
     email: str
     password: str
-    role: str
     active: bool
+    photo_url: str
     created_at: str 
     
     class Config:
@@ -16,8 +16,8 @@ class UserRegister(BaseModel):
     name: str
     email: str
     password: str
-    role: str
     active: bool = True
+    photo_url: str 
     
     class Config:
         orm_mode = True
