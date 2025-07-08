@@ -1,7 +1,8 @@
 from pydantic import BaseModel
+import uuid
 
 class User(BaseModel):
-    id: str  # UUID como string que devuelve Supabase
+    id: uuid.UUID 
     name: str
     email: str
     password: str
