@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 class Company(BaseModel):
-    id: str  # UUID como string que devuelve Supabase
+    id: str  
     name: str
     cif: str
     email: str
@@ -31,3 +31,6 @@ class CompanyUpdate(BaseModel):
     
     class Config:
         orm_mode = True
+        
+class CompanySelection(BaseModel):
+    company_id: str

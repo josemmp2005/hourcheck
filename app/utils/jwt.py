@@ -32,6 +32,12 @@ def create_token(usuario:dict):
         "exp": datetime.now(timezone.utc) + timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES))
     }
     
+    # Agregar company_id y role si están presentes
+    if "company_id" in usuario:
+        payload["company_id"] = usuario["company_id"]
+    if "role" in usuario:
+        payload["role"] = usuario["role"]
+    
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return token
 

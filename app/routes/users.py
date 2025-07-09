@@ -6,6 +6,7 @@ from app.utils.jwt import create_token
 
 router = APIRouter()
 
+# Get all users
 @router.get("/", response_model=list[User])
 def get_users():
     response = supabase.table("users").select("*").execute()
@@ -15,7 +16,7 @@ def get_users():
     
     return response.data
 
-
+# This endpoint is used to register a new user
 @router.post("/register", response_model=User)
 def create_user(user: UserRegister):    
     existing_user = supabase.table("users").select("*").eq("email", user.email).execute()
@@ -38,6 +39,7 @@ def create_user(user: UserRegister):
     return response.data[0]
 
 
+# User login endpoint 
 @router.post("/login")
 def user_login(user: UserLogin):
     response = supabase.table("users").select("*").eq("email", user.email).execute()
