@@ -1,10 +1,11 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 class CompanyInvitation(BaseModel):
     id: str  # UUID como string
     company_id: str  # UUID como string
-    email: str
+    email: Optional[str] = None  # Opcional para invitaciones por código
     code: str
     role: str
     used: bool = False

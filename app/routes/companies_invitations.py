@@ -9,6 +9,8 @@ import string
 
 router = APIRouter()
 
+
+# This endpoint is used to send an email invitation to a user to join a company
 @router.post("/email/send", response_model=CompanyInvitation)
 def send_email_invitation(invitation: CompanyInvitationCreate, token: dict = Depends(get_token_data)):
     user_id = token.get("sub")
@@ -72,6 +74,7 @@ def send_email_invitation(invitation: CompanyInvitationCreate, token: dict = Dep
     return response.data[0]
 
 
+# This endpoint is used to verify an invitation code and associate the user with the company
 @router.post("/code/verify", response_model=CompanyInvitation)
 def verify_invitation_code(verification: CompanyInvitationVerify, token: dict = Depends(get_token_data)):
     if not verification.code:
@@ -108,20 +111,30 @@ def verify_invitation_code(verification: CompanyInvitationVerify, token: dict = 
     
     return invitation
 
+# This endpoint generates a new invitation code for the company, only accessible by users with admin or hr roles
 @router.get("/code/generate", response_model=CompanyInvitation)
 def generate_invitation_code(token: dict = Depends(get_token_data)):
     user_id = token.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    company_id = token.get("company_id")
+    user_role = token.get("role")
     
-    user_company_role = supabase.table("user_company_roles").select("*").eq("user_id", user_id).execute()
-    if not user_company_role.data:
-        raise HTTPException(status_code=403, detail="User is not associated with any company")
+    if not user_id or not company_id:
+        raise HTTPException(status_code=401, detail="Company context required - please select a company first")
     
-    company_id = user_company_role.data[0]["company_id"]
+    if user_role not in ["admin", "hr"]:
+        raise HTTPException(status_code=403, detail="User does not have permission to generate invitations")
     
     alphabet = string.ascii_uppercase + string.digits
-    invitation_code = ''.join(secrets.choice(alphabet) for _ in range(10))
+    max_attempts = 5
+    
+    for attempt in range(max_attempts):
+        invitation_code = ''.join(secrets.choice(alphabet) for _ in range(10))
+        
+        existing_code = supabase.table("company_invitations").select("code").eq("company_id", company_id).eq("code", invitation_code).execute()
+        if not existing_code.data:
+            break
+    else:
+        raise HTTPException(status_code=500, detail="Could not generate unique invitation code")
     
     expires_at = (datetime.now(timezone.utc) + timedelta(days=1)).isoformat()
     invitation_data = {
