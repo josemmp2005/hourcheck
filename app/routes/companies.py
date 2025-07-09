@@ -38,6 +38,7 @@ def create_company(company: CompanyCreate, token: dict = Depends(get_token_data)
     
     return company.data[0]
 
+
 # Update an existing company, you must be authenticated, this endpoint update the token adding the company_id and role
 @router.post("/select-company")
 def select_company(selection: CompanySelection, token: dict = Depends(get_token_data)):
@@ -73,6 +74,7 @@ def select_company(selection: CompanySelection, token: dict = Depends(get_token_
         "role": role_info["role"]
     }
 
+
 # This endpoint returns all company employees, you must be authenticated and have the role of admin or hr, you must select a company first, if
 # not, it will raise an error because the token does not have the company_id and role
 @router.get("/employees", response_model=list[User])
@@ -101,6 +103,7 @@ def get_employees(token: dict = Depends(get_token_data)):
     
     return users_data
 
+
 # This endpoint returns all companies the user is associated with, you must be authenticated
 @router.get("/user-companies", response_model=list[dict])
 def get_user_companies(token: dict = Depends(get_token_data)):
@@ -124,3 +127,27 @@ def get_user_companies(token: dict = Depends(get_token_data)):
     
     return companies_data
 
+
+# This endpoint allows an admin or hr to delete an employee from the company, you must select a company first, if not, it will raise an 
+# error because the token does not have the company_id and role
+@router.delete("/employee/{employee_id}")
+def delete_employee(employee_id: str, token: dict = Depends(get_token_data)):
+    user_id = token.get("sub")
+    company_id = token.get("company_id")
+    user_role = token.get("role")
+    if not user_id or not company_id:
+        raise HTTPException(status_code=401, detail="Company context required - please select a company first")
+    
+    if user_role not in ["admin", "hr"]:
+        raise HTTPException(status_code=403, detail="User does not have permission to delete employees")
+    
+    # Check if the employee exists in the company
+    employee = supabase.table("user_company_roles").select("*").eq("user_id", employee_id).eq("company_id", company_id).execute()
+    if not employee.data:
+        raise HTTPException(status_code=404, detail="Employee not found in this company")
+    try:
+        # Delete the employee from the user_company_roles table
+        supabase.table("user_company_roles").delete().eq("user_id", employee_id).eq("company_id", company_id).execute()
+        return {"detail": "Employee deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting employee: {str(e)}")
