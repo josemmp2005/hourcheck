@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class CLockEntry(BaseModel):
+class ClockEntry(BaseModel):
     id: str 
     user_id: str
     company_id: str
